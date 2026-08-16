@@ -16,12 +16,18 @@
         input, select, button.primary { width: 100%; padding: 12px; margin: 8px 0 20px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
         button.primary { background-color: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; }
         button.primary:hover { background-color: #2ecc71; }
-        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
         ul { list-style-type: none; padding: 0; }
         li { background: #ecf0f1; margin: 8px 0; padding: 15px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
         .delete-btn { color: #e74c3c; cursor: pointer; font-weight: bold; font-size: 14px; padding: 5px; }
         .hint { font-size: 14px; color: #7f8c8d; margin-top: -15px; display: block; margin-bottom: 10px; }
         #loading { text-align: center; color: #2980b9; font-weight: bold; margin-bottom: 10px; display: none; }
+        
+        /* עיצוב היומן השבועי */
+        .day-card { background: #fdfdfd; margin-bottom: 15px; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; }
+        .day-card h4 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #34495e; padding-bottom: 5px; margin-bottom: 15px; }
+        .meal-slot { display: flex; align-items: center; margin-bottom: 10px; }
+        .meal-slot label { width: 65px; font-weight: bold; font-size: 14px; color: #555; }
+        .meal-slot select { flex-grow: 1; margin: 0; padding: 8px; font-size: 15px; }
     </style>
 </head>
 <body>
@@ -45,7 +51,7 @@
         <input type="text" id="recipeName" placeholder="שם המתכון (למשל: עוף בתנור)">
         <input type="text" id="recipeIngredients" placeholder="מצרכים (מופרדים בפסיק. למשל: עוף, תפוחי אדמה, שמן זית)">
         <span class="hint">* הקפד להפריד את המצרכים בפסיק כדי שהרשימה תאחד אותם נכון.</span>
-        <button class="primary" id="addBtn" onclick="addRecipe()">הוסף למאגר</button>
+        <button class="primary" onclick="addRecipe()">הוסף למאגר</button>
         
         <h3>מאגר המתכונים</h3>
         <ul id="recipeList"></ul>
@@ -53,23 +59,9 @@
 
     <!-- עמוד תכנון שבועי -->
     <div id="planner" class="section">
-        <h3>תכנון ארוחות שבועי</h3>
-        <select id="daySelect">
-            <option value="ראשון">ראשון</option>
-            <option value="שני">שני</option>
-            <option value="שלישי">שלישי</option>
-            <option value="רביעי">רביעי</option>
-            <option value="חמישי">חמישי</option>
-            <option value="שישי">שישי</option>
-            <option value="שבת">שבת</option>
-        </select>
-        <select id="recipeSelect">
-            <option value="">בחר מתכון מהמאגר...</option>
-        </select>
-        <button class="primary" onclick="planMeal()">שבץ לארוחה</button>
-        
-        <h3>השבוע שלנו</h3>
-        <ul id="mealList"></ul>
+        <h3>יומן ארוחות</h3>
+        <p class="hint">בחר מתכון לכל ארוחה. השינויים נשמרים אוטומטית.</p>
+        <div id="weeklyCalendar"></div>
     </div>
 
     <!-- עמוד רשימת קניות -->
@@ -89,9 +81,15 @@
     let recipes = [];
     let meals = [];
 
+    const daysOfWeek = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    const mealTypes = [
+        {id: 'breakfast', label: 'בוקר'}, 
+        {id: 'lunch', label: 'צהריים'}, 
+        {id: 'dinner', label: 'ערב'}
+    ];
+
     const loadingIndicator = document.getElementById('loading');
 
-    // טעינת נתונים מהענן כשהאפליקציה נפתחת
     async function loadDataFromCloud() {
         loadingIndicator.style.display = 'block';
         try {
@@ -99,17 +97,16 @@
             const data = await response.json();
             recipes = data.recipes || [];
             meals = data.meals || [];
-            renderData();
-            updateRecipeSelect();
+            
+            renderRecipes();
+            if(document.getElementById('planner').classList.contains('active')) renderPlanner();
             if(document.getElementById('shopping').classList.contains('active')) generateShoppingList();
         } catch (error) {
             console.error("שגיאה בטעינת הנתונים:", error);
-            alert("לא הצלחנו להתחבר לענן. ודא שכתובת ה-Worker נכונה.");
         }
         loadingIndicator.style.display = 'none';
     }
 
-    // שמירת נתונים לענן
     async function saveDataToCloud() {
         loadingIndicator.style.display = 'block';
         try {
@@ -120,7 +117,6 @@
             });
         } catch (error) {
             console.error("שגיאה בשמירת הנתונים:", error);
-            alert("שגיאה בשמירת הנתונים בענן.");
         }
         loadingIndicator.style.display = 'none';
     }
@@ -128,7 +124,7 @@
     function showSection(sectionId) {
         document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
         document.getElementById(sectionId).classList.add('active');
-        if(sectionId === 'planner') updateRecipeSelect();
+        if(sectionId === 'planner') renderPlanner();
         if(sectionId === 'shopping') generateShoppingList();
     }
 
@@ -140,30 +136,60 @@
         const ingredients = ingString.split(',').map(i => i.trim()).filter(i => i !== "");
         recipes.push({ id: Date.now(), name, ingredients });
         
-        renderData(); // עדכון מיידי של המסך
-        await saveDataToCloud(); // שמירה ברקע
-        
+        renderRecipes();
         document.getElementById('recipeName').value = '';
         document.getElementById('recipeIngredients').value = '';
+        
+        await saveDataToCloud();
     }
 
-    function updateRecipeSelect() {
-        const select = document.getElementById('recipeSelect');
-        select.innerHTML = '<option value="">בחר מתכון מהמאגר...</option>';
-        recipes.forEach(r => {
-            select.innerHTML += `<option value="${r.id}">${r.name}</option>`;
+    // ציור היומן השבועי
+    function renderPlanner() {
+        const container = document.getElementById('weeklyCalendar');
+        container.innerHTML = '';
+        
+        daysOfWeek.forEach(day => {
+            let dayHtml = `<div class="day-card"><h4>${day}</h4>`;
+            
+            mealTypes.forEach(mealType => {
+                // בדיקה אם קיים מתכון משובץ למשבצת הזו
+                const plannedMeal = meals.find(m => m.day === day && m.mealType === mealType.id);
+                const selectedRecipeId = plannedMeal ? plannedMeal.recipeId : '';
+                
+                // בניית רשימת המתכונים למשבצת
+                let optionsHtml = `<option value="">-- ללא תכנון --</option>`;
+                recipes.forEach(r => {
+                    const isSelected = (r.id == selectedRecipeId) ? 'selected' : '';
+                    optionsHtml += `<option value="${r.id}" ${isSelected}>${r.name}</option>`;
+                });
+                
+                dayHtml += `
+                <div class="meal-slot">
+                    <label>${mealType.label}</label>
+                    <select onchange="updateMeal('${day}', '${mealType.id}', this.value)">
+                        ${optionsHtml}
+                    </select>
+                </div>`;
+            });
+            
+            dayHtml += `</div>`;
+            container.innerHTML += dayHtml;
         });
     }
 
-    async function planMeal() {
-        const day = document.getElementById('daySelect').value;
-        const recipeId = document.getElementById('recipeSelect').value;
-        if(!recipeId) return alert('יש לבחור מתכון מהרשימה');
+    // עדכון משבצת ביומן (מופעל אוטומטית בעת שינוי ערך ברשימה הנפתחת)
+    async function updateMeal(day, mealType, recipeId) {
+        // מחיקת הארוחה הישנה במשבצת הזו (אם הייתה)
+        meals = meals.filter(m => !(m.day === day && m.mealType === mealType));
         
-        const recipe = recipes.find(r => r.id == recipeId);
-        meals.push({ id: Date.now(), day, recipeName: recipe.name, ingredients: recipe.ingredients });
+        // אם נבחר מתכון חדש, נוסיף אותו למערך הארוחות
+        if (recipeId) {
+            const recipe = recipes.find(r => r.id == recipeId);
+            if (recipe) {
+                meals.push({ id: Date.now(), day, mealType, recipeId, recipeName: recipe.name, ingredients: recipe.ingredients });
+            }
+        }
         
-        renderData();
         await saveDataToCloud();
     }
 
@@ -185,34 +211,24 @@
     }
 
     async function deleteRecipe(id) { 
-        recipes = recipes.filter(r => r.id !== id); 
-        renderData(); 
-        updateRecipeSelect(); 
-        await saveDataToCloud();
-    }
-    
-    async function deleteMeal(id) { 
-        meals = meals.filter(m => m.id !== id); 
-        renderData(); 
-        generateShoppingList(); 
+        recipes = recipes.filter(r => r.id !== id);
+        // מחיקת המתכון גם מיומן הארוחות כדי שלא יישאר "באוויר"
+        meals = meals.filter(m => m.recipeId != id);
+        
+        renderRecipes(); 
+        if(document.getElementById('planner').classList.contains('active')) renderPlanner();
         await saveDataToCloud();
     }
 
-    function renderData() {
+    function renderRecipes() {
         const rList = document.getElementById('recipeList');
         rList.innerHTML = '';
         recipes.forEach(r => {
             rList.innerHTML += `<li>${r.name} <span class="delete-btn" onclick="deleteRecipe(${r.id})">מחק</span></li>`;
         });
-
-        const mList = document.getElementById('mealList');
-        mList.innerHTML = '';
-        meals.forEach(m => {
-            mList.innerHTML += `<li><strong>${m.day}:</strong> ${m.recipeName} <span class="delete-btn" onclick="deleteMeal(${m.id})">בטל שיבוץ</span></li>`;
-        });
     }
 
-    // הפעלה ראשונית כשפותחים את האפליקציה
+    // הפעלה ראשונית
     loadDataFromCloud();
 </script>
 </body>
