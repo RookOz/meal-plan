@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>אפליקציית ארוחות משפחתית</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 0; }
+        header { background-color: #2c3e50; color: white; padding: 15px; text-align: center; margin-bottom: 20px; }
+        nav { display: flex; justify-content: space-around; background-color: #34495e; padding: 10px; }
+        nav button { background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 10px; }
+        nav button:hover { background-color: #2c3e50; border-radius: 5px;}
+        .container { padding: 0 20px 20px; max-width: 600px; margin: 0 auto; }
+        .section { display: none; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;}
+        .section.active { display: block; }
+        input, select, button.primary { width: 100%; padding: 12px; margin: 8px 0 20px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        button.primary { background-color: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button.primary:hover { background-color: #2ecc71; }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        ul { list-style-type: none; padding: 0; }
+        li { background: #ecf0f1; margin: 8px 0; padding: 15px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .delete-btn { color: #e74c3c; cursor: pointer; font-weight: bold; font-size: 14px; padding: 5px; }
+        .hint { font-size: 14px; color: #7f8c8d; margin-top: -15px; display: block; margin-bottom: 10px; }
+        #loading { text-align: center; color: #2980b9; font-weight: bold; margin-bottom: 10px; display: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>ניהול ארוחות וקניות</h2>
+</header>
+
+<nav>
+    <button onclick="showSection('recipes')">מתכונים</button>
+    <button onclick="showSection('planner')">תכנון שבועי</button>
+    <button onclick="showSection('shopping')">רשימת קניות</button>
+</nav>
+
+<div class="container">
+    <div id="loading">מסנכרן נתונים מול הענן...</div>
+    
+    <!-- עמוד מתכונים -->
+    <div id="recipes" class="section active">
+        <h3>הוספת מתכון חדש</h3>
+        <input type="text" id="recipeName" placeholder="שם המתכון (למשל: עוף בתנור)">
+        <input type="text" id="recipeIngredients" placeholder="מצרכים (מופרדים בפסיק. למשל: עוף, תפוחי אדמה, שמן זית)">
+        <span class="hint">* הקפד להפריד את המצרכים בפסיק כדי שהרשימה תאחד אותם נכון.</span>
+        <button class="primary" id="addBtn" onclick="addRecipe()">הוסף למאגר</button>
+        
+        <h3>מאגר המתכונים</h3>
+        <ul id="recipeList"></ul>
+    </div>
+
+    <!-- עמוד תכנון שבועי -->
+    <div id="planner" class="section">
+        <h3>תכנון ארוחות שבועי</h3>
+        <select id="daySelect">
+            <option value="ראשון">ראשון</option>
+            <option value="שני">שני</option>
+            <option value="שלישי">שלישי</option>
+            <option value="רביעי">רביעי</option>
+            <option value="חמישי">חמישי</option>
+            <option value="שישי">שישי</option>
+            <option value="שבת">שבת</option>
+        </select>
+        <select id="recipeSelect">
+            <option value="">בחר מתכון מהמאגר...</option>
+        </select>
+        <button class="primary" onclick="planMeal()">שבץ לארוחה</button>
+        
+        <h3>השבוע שלנו</h3>
+        <ul id="mealList"></ul>
+    </div>
+
+    <!-- עמוד רשימת קניות -->
+    <div id="shopping" class="section">
+        <h3>רשימת קניות אוטומטית</h3>
+        <p class="hint">הרשימה מורכבת מהמצרכים של הארוחות ששובצו בתכנון השבועי.</p>
+        <button class="primary" onclick="loadDataFromCloud()">סנכרן נתונים מהענן</button>
+        <ul id="shoppingList"></ul>
+    </div>
+
+</div>
+
+<script>
+    // שים לב: הכנס כאן את כתובת ה-Worker שקיבלת מקלאודפלייר
+    const API_URL = "https://family-meals-api.taysachs.workers.dev/"; 
+    
+    let recipes = [];
+    let meals = [];
+
+    const loadingIndicator = document.getElementById('loading');
+
+    // טעינת נתונים מהענן כשהאפליקציה נפתחת
+    async function loadDataFromCloud() {
+        loadingIndicator.style.display = 'block';
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+            recipes = data.recipes || [];
+            meals = data.meals || [];
+            renderData();
+            updateRecipeSelect();
+            if(document.getElementById('shopping').classList.contains('active')) generateShoppingList();
+        } catch (error) {
+            console.error("שגיאה בטעינת הנתונים:", error);
+            alert("לא הצלחנו להתחבר לענן. ודא שכתובת ה-Worker נכונה.");
+        }
+        loadingIndicator.style.display = 'none';
+    }
+
+    // שמירת נתונים לענן
+    async function saveDataToCloud() {
+        loadingIndicator.style.display = 'block';
+        try {
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ recipes, meals })
+            });
+        } catch (error) {
+            console.error("שגיאה בשמירת הנתונים:", error);
+            alert("שגיאה בשמירת הנתונים בענן.");
+        }
+        loadingIndicator.style.display = 'none';
+    }
+
+    function showSection(sectionId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById(sectionId).classList.add('active');
+        if(sectionId === 'planner') updateRecipeSelect();
+        if(sectionId === 'shopping') generateShoppingList();
+    }
+
+    async function addRecipe() {
+        const name = document.getElementById('recipeName').value.trim();
+        const ingString = document.getElementById('recipeIngredients').value.trim();
+        if(!name) return alert('נא להזין את שם המתכון');
+        
+        const ingredients = ingString.split(',').map(i => i.trim()).filter(i => i !== "");
+        recipes.push({ id: Date.now(), name, ingredients });
+        
+        renderData(); // עדכון מיידי של המסך
+        await saveDataToCloud(); // שמירה ברקע
+        
+        document.getElementById('recipeName').value = '';
+        document.getElementById('recipeIngredients').value = '';
+    }
+
+    function updateRecipeSelect() {
+        const select = document.getElementById('recipeSelect');
+        select.innerHTML = '<option value="">בחר מתכון מהמאגר...</option>';
+        recipes.forEach(r => {
+            select.innerHTML += `<option value="${r.id}">${r.name}</option>`;
+        });
+    }
+
+    async function planMeal() {
+        const day = document.getElementById('daySelect').value;
+        const recipeId = document.getElementById('recipeSelect').value;
+        if(!recipeId) return alert('יש לבחור מתכון מהרשימה');
+        
+        const recipe = recipes.find(r => r.id == recipeId);
+        meals.push({ id: Date.now(), day, recipeName: recipe.name, ingredients: recipe.ingredients });
+        
+        renderData();
+        await saveDataToCloud();
+    }
+
+    function generateShoppingList() {
+        const list = document.getElementById('shoppingList');
+        list.innerHTML = '';
+        let allIngredients = {};
+        
+        meals.forEach(meal => {
+            meal.ingredients.forEach(ing => {
+                allIngredients[ing] = (allIngredients[ing] || 0) + 1;
+            });
+        });
+
+        for (let item in allIngredients) {
+            let amountText = allIngredients[item] > 1 ? ` (x${allIngredients[item]})` : '';
+            list.innerHTML += `<li>${item}${amountText} <span class="delete-btn" onclick="this.parentElement.remove()">סומן / הוסר</span></li>`;
+        }
+    }
+
+    async function deleteRecipe(id) { 
+        recipes = recipes.filter(r => r.id !== id); 
+        renderData(); 
+        updateRecipeSelect(); 
+        await saveDataToCloud();
+    }
+    
+    async function deleteMeal(id) { 
+        meals = meals.filter(m => m.id !== id); 
+        renderData(); 
+        generateShoppingList(); 
+        await saveDataToCloud();
+    }
+
+    function renderData() {
+        const rList = document.getElementById('recipeList');
+        rList.innerHTML = '';
+        recipes.forEach(r => {
+            rList.innerHTML += `<li>${r.name} <span class="delete-btn" onclick="deleteRecipe(${r.id})">מחק</span></li>`;
+        });
+
+        const mList = document.getElementById('mealList');
+        mList.innerHTML = '';
+        meals.forEach(m => {
+            mList.innerHTML += `<li><strong>${m.day}:</strong> ${m.recipeName} <span class="delete-btn" onclick="deleteMeal(${m.id})">בטל שיבוץ</span></li>`;
+        });
+    }
+
+    // הפעלה ראשונית כשפותחים את האפליקציה
+    loadDataFromCloud();
+</script>
+</body>
+</html>
