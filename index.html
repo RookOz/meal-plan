@@ -13,16 +13,31 @@
         .container { padding: 0 20px 20px; max-width: 800px; margin: 0 auto; }
         .section { display: none; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;}
         .section.active { display: block; }
-        input, button.primary { width: 100%; padding: 12px; margin: 8px 0 20px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+        
+        /* עיצוב שדות קלט (Inputs & Textareas) */
+        input, textarea, button.primary { width: 100%; padding: 12px; margin: 8px 0 20px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-family: inherit; }
+        textarea { resize: vertical; line-height: 1.5; }
         button.primary { background-color: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; }
         button.primary:hover { background-color: #2ecc71; }
+        
         ul { list-style-type: none; padding: 0; }
-        li { background: #ecf0f1; margin: 8px 0; padding: 15px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        li.shopping-item { background: #ecf0f1; margin: 8px 0; padding: 15px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
         .delete-btn { color: #e74c3c; cursor: pointer; font-weight: bold; font-size: 14px; padding: 5px; }
         .hint { font-size: 14px; color: #7f8c8d; margin-top: -15px; display: block; margin-bottom: 10px; }
         #loading { text-align: center; color: #2980b9; font-weight: bold; margin-bottom: 10px; display: none; }
         
-        /* עיצוב טבלת היומן החדשה */
+        /* עיצוב ספר המתכונים (כרטיסיות) */
+        .recipe-card { background: #fdfdfd; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .recipe-card h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 20px; border-bottom: 2px solid #34495e; padding-bottom: 5px; }
+        .recipe-card h5 { margin: 15px 0 5px 0; color: #27ae60; font-size: 16px; }
+        .recipe-card p { margin: 0; font-size: 15px; white-space: pre-wrap; line-height: 1.6; color: #444; }
+        .recipe-card ul.ingredients-list { margin: 0; padding-right: 20px; list-style-type: disc; }
+        .recipe-card ul.ingredients-list li { background: none; padding: 2px 0; margin: 0; border: none; color: #444; font-size: 15px; display: list-item; }
+        .recipe-card .actions { margin-top: 15px; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
+        .recipe-card .actions button { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .recipe-card .actions button:hover { background: #c0392b; }
+
+        /* עיצוב טבלת היומן */
         .table-responsive { overflow-x: auto; margin-top: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .calendar-table { width: 100%; border-collapse: collapse; background: white; min-width: 500px; }
         .calendar-table th, .calendar-table td { border: 1px solid #e0e0e0; padding: 10px 5px; text-align: center; vertical-align: middle; }
@@ -39,7 +54,7 @@
 </header>
 
 <nav>
-    <button onclick="showSection('recipes')">מתכונים</button>
+    <button onclick="showSection('recipes')">ספר מתכונים</button>
     <button onclick="showSection('planner')">תכנון שבועי</button>
     <button onclick="showSection('shopping')">רשימת קניות</button>
 </nav>
@@ -47,16 +62,21 @@
 <div class="container">
     <div id="loading">מסנכרן נתונים מול הענן...</div>
     
-    <!-- עמוד מתכונים -->
+    <!-- עמוד ספר מתכונים -->
     <div id="recipes" class="section active">
         <h3>הוספת מתכון חדש</h3>
-        <input type="text" id="recipeName" placeholder="שם המתכון (למשל: עוף בתנור)">
-        <input type="text" id="recipeIngredients" placeholder="מצרכים (מופרדים בפסיק. למשל: עוף, תפוחי אדמה, שמן זית)">
-        <span class="hint">* הקפד להפריד את המצרכים בפסיק כדי שהרשימה תאחד אותם נכון.</span>
-        <button class="primary" onclick="addRecipe()">הוסף למאגר</button>
+        <input type="text" id="recipeName" placeholder="שם המנה (למשל: פסטה ברוטב עגבניות)">
         
-        <h3>מאגר המתכונים</h3>
-        <ul id="recipeList"></ul>
+        <textarea id="recipeIngredients" rows="5" placeholder="מצרכים (כל מצרך וכמות בשורה נפרדת)&#10;לדוגמה:&#10;1 חבילת פסטה&#10;4 עגבניות בשלות&#10;2 שיני שום&#10;קורט מלח"></textarea>
+        
+        <textarea id="recipeInstructions" rows="4" placeholder="אופן ההכנה (הסבר מפורט כיצד להכין את המנה)..."></textarea>
+        
+        <button class="primary" onclick="addRecipe()">שמור מתכון בספר</button>
+        
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;">
+        
+        <h3>ספר המתכונים שלנו</h3>
+        <div id="recipeList"></div> <!-- כאן יופיעו הכרטיסיות -->
     </div>
 
     <!-- עמוד תכנון שבועי -->
@@ -78,7 +98,7 @@
 
 <script>
     // שים לב: הכנס כאן את כתובת ה-Worker שקיבלת מקלאודפלייר
-    const API_URL = "https://family-meals-api.taysachs.workers.dev/"; 
+    const API_URL = "https://YOUR_WORKER_URL_HERE"; 
     
     let recipes = [];
     let meals = [];
@@ -133,16 +153,56 @@
     async function addRecipe() {
         const name = document.getElementById('recipeName').value.trim();
         const ingString = document.getElementById('recipeIngredients').value.trim();
+        const instructions = document.getElementById('recipeInstructions').value.trim();
+        
         if(!name) return alert('נא להזין את שם המתכון');
         
-        const ingredients = ingString.split(',').map(i => i.trim()).filter(i => i !== "");
-        recipes.push({ id: Date.now(), name, ingredients });
+        // הפרדת המצרכים לפי שורות (Enter) במקום פסיקים
+        const ingredients = ingString.split('\n').map(i => i.trim()).filter(i => i !== "");
+        
+        // הוספת המתכון החדש עם אופן ההכנה למערך
+        recipes.push({ id: Date.now(), name, ingredients, instructions });
         
         renderRecipes();
         document.getElementById('recipeName').value = '';
         document.getElementById('recipeIngredients').value = '';
+        document.getElementById('recipeInstructions').value = '';
         
         await saveDataToCloud();
+    }
+
+    // ציור כרטיסיות ספר המתכונים
+    function renderRecipes() {
+        const container = document.getElementById('recipeList');
+        container.innerHTML = '';
+        
+        if(recipes.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#7f8c8d;">ספר המתכונים ריק. הוסף את המתכון הראשון שלך!</p>';
+            return;
+        }
+
+        recipes.forEach(r => {
+            // הפיכת מערך המצרכים לרשימת HTML
+            let ingHtml = r.ingredients.map(ing => `<li>${ing}</li>`).join('');
+            let instructionsText = r.instructions ? r.instructions : 'לא הוזנו הוראות הכנה.';
+
+            container.innerHTML += `
+            <div class="recipe-card">
+                <h4>${r.name}</h4>
+                
+                <h5>מצרכים:</h5>
+                <ul class="ingredients-list">
+                    ${ingHtml}
+                </ul>
+                
+                <h5>אופן ההכנה:</h5>
+                <p>${instructionsText}</p>
+                
+                <div class="actions">
+                    <button onclick="deleteRecipe(${r.id})">מחק מתכון</button>
+                </div>
+            </div>`;
+        });
     }
 
     // ציור טבלת היומן השבועי
@@ -167,11 +227,9 @@
             tableHtml += `<tr><td>${day}</td>`;
             
             mealTypes.forEach(mealType => {
-                // בדיקה אם קיים מתכון משובץ למשבצת הזו
                 const plannedMeal = meals.find(m => m.day === day && m.mealType === mealType.id);
                 const selectedRecipeId = plannedMeal ? plannedMeal.recipeId : '';
                 
-                // בניית רשימת המתכונים למשבצת
                 let optionsHtml = `<option value="">- ללא -</option>`;
                 recipes.forEach(r => {
                     const isSelected = (r.id == selectedRecipeId) ? 'selected' : '';
@@ -193,19 +251,14 @@
         container.innerHTML = tableHtml;
     }
 
-    // עדכון משבצת ביומן (מופעל אוטומטית בעת שינוי ערך ברשימה הנפתחת)
     async function updateMeal(day, mealType, recipeId) {
-        // מחיקת הארוחה הישנה במשבצת הזו (אם הייתה)
         meals = meals.filter(m => !(m.day === day && m.mealType === mealType));
-        
-        // אם נבחר מתכון חדש, נוסיף אותו למערך הארוחות
         if (recipeId) {
             const recipe = recipes.find(r => r.id == recipeId);
             if (recipe) {
                 meals.push({ id: Date.now(), day, mealType, recipeId, recipeName: recipe.name, ingredients: recipe.ingredients });
             }
         }
-        
         await saveDataToCloud();
     }
 
@@ -215,33 +268,33 @@
         let allIngredients = {};
         
         meals.forEach(meal => {
-            meal.ingredients.forEach(ing => {
-                allIngredients[ing] = (allIngredients[ing] || 0) + 1;
-            });
+            if(meal.ingredients) {
+                meal.ingredients.forEach(ing => {
+                    // הרשימה מאחדת בדיוק שורות זהות לחלוטין
+                    allIngredients[ing] = (allIngredients[ing] || 0) + 1;
+                });
+            }
         });
 
         for (let item in allIngredients) {
             let amountText = allIngredients[item] > 1 ? ` (x${allIngredients[item]})` : '';
-            list.innerHTML += `<li>${item}${amountText} <span class="delete-btn" onclick="this.parentElement.remove()">סומן / הוסר</span></li>`;
+            list.innerHTML += `<li class="shopping-item">${item}${amountText} <span class="delete-btn" onclick="this.parentElement.remove()">סומן / הוסר</span></li>`;
+        }
+        
+        if(Object.keys(allIngredients).length === 0) {
+            list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">אין מצרכים ברשימה כרגע.</p>';
         }
     }
 
     async function deleteRecipe(id) { 
+        if(!confirm('האם אתה בטוח שברצונך למחוק מתכון זה?')) return;
+        
         recipes = recipes.filter(r => r.id !== id);
-        // מחיקת המתכון גם מיומן הארוחות כדי שלא יישאר "באוויר"
         meals = meals.filter(m => m.recipeId != id);
         
         renderRecipes(); 
         if(document.getElementById('planner').classList.contains('active')) renderPlanner();
         await saveDataToCloud();
-    }
-
-    function renderRecipes() {
-        const rList = document.getElementById('recipeList');
-        rList.innerHTML = '';
-        recipes.forEach(r => {
-            rList.innerHTML += `<li>${r.name} <span class="delete-btn" onclick="deleteRecipe(${r.id})">מחק</span></li>`;
-        });
     }
 
     // הפעלה ראשונית
