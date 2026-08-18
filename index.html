@@ -14,11 +14,21 @@
         .section { display: none; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px;}
         .section.active { display: block; }
         
-        /* עיצוב שדות קלט (Inputs & Textareas) */
-        input, textarea, button.primary { width: 100%; padding: 12px; margin: 8px 0 20px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-family: inherit; }
+        /* עיצוב כללי לכפתורים ושדות */
+        input, textarea, button.primary, button.secondary { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-family: inherit; }
         textarea { resize: vertical; line-height: 1.5; }
-        button.primary { background-color: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button.primary { background-color: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; }
         button.primary:hover { background-color: #2ecc71; }
+        button.secondary { background-color: #3498db; color: white; border: none; cursor: pointer; width: auto; padding: 8px 15px; font-size: 14px; }
+        button.secondary:hover { background-color: #2980b9; }
+
+        /* שורות המצרכים */
+        .ingredient-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .ingredient-row input { margin: 0; }
+        .ingredient-row .ing-name { flex: 2; }
+        .ingredient-row .ing-amount { flex: 1; }
+        .remove-ing-btn { background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 12px 15px; font-weight: bold; font-size: 16px; }
+        .remove-ing-btn:hover { background: #c0392b; }
         
         ul { list-style-type: none; padding: 0; }
         li.shopping-item { background: #ecf0f1; margin: 8px 0; padding: 15px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
@@ -26,7 +36,7 @@
         .hint { font-size: 14px; color: #7f8c8d; margin-top: -15px; display: block; margin-bottom: 10px; }
         #loading { text-align: center; color: #2980b9; font-weight: bold; margin-bottom: 10px; display: none; }
         
-        /* עיצוב ספר המתכונים (כרטיסיות) */
+        /* כרטיסיות המתכונים */
         .recipe-card { background: #fdfdfd; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .recipe-card h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 20px; border-bottom: 2px solid #34495e; padding-bottom: 5px; }
         .recipe-card h5 { margin: 15px 0 5px 0; color: #27ae60; font-size: 16px; }
@@ -37,14 +47,13 @@
         .recipe-card .actions button { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
         .recipe-card .actions button:hover { background: #c0392b; }
 
-        /* עיצוב טבלת היומן */
+        /* טבלת היומן */
         .table-responsive { overflow-x: auto; margin-top: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .calendar-table { width: 100%; border-collapse: collapse; background: white; min-width: 500px; }
         .calendar-table th, .calendar-table td { border: 1px solid #e0e0e0; padding: 10px 5px; text-align: center; vertical-align: middle; }
         .calendar-table th { background-color: #34495e; color: white; font-weight: 500; font-size: 15px; padding: 12px 5px; }
         .calendar-table td:first-child { background-color: #ecf0f1; font-weight: bold; color: #2c3e50; width: 60px; }
         .calendar-table select { width: 100%; padding: 8px 2px; margin: 0; font-size: 13px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #fff; cursor: pointer; }
-        .calendar-table select:focus { outline: none; border-color: #27ae60; }
     </style>
 </head>
 <body>
@@ -67,16 +76,23 @@
         <h3>הוספת מתכון חדש</h3>
         <input type="text" id="recipeName" placeholder="שם המנה (למשל: פסטה ברוטב עגבניות)">
         
-        <textarea id="recipeIngredients" rows="5" placeholder="מצרכים (כל מצרך וכמות בשורה נפרדת)&#10;לדוגמה:&#10;1 חבילת פסטה&#10;4 עגבניות בשלות&#10;2 שיני שום&#10;קורט מלח"></textarea>
+        <div style="margin: 15px 0;">
+            <label style="font-weight: bold; color: #2c3e50; margin-bottom: 10px; display: block;">מצרכים:</label>
+            <div id="ingredientsContainer">
+                <!-- לכאן יתווספו השורות דינמית -->
+            </div>
+            <button class="secondary" onclick="addIngredientRow()">+ הוסף מצרך</button>
+        </div>
         
-        <textarea id="recipeInstructions" rows="4" placeholder="אופן ההכנה (הסבר מפורט כיצד להכין את המנה)..."></textarea>
+        <label style="font-weight: bold; color: #2c3e50; margin-top: 15px; display: block;">הוראות הכנה:</label>
+        <textarea id="recipeInstructions" rows="4" placeholder="הסבר מפורט כיצד להכין את המנה..."></textarea>
         
         <button class="primary" onclick="addRecipe()">שמור מתכון בספר</button>
         
         <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;">
         
         <h3>ספר המתכונים שלנו</h3>
-        <div id="recipeList"></div> <!-- כאן יופיעו הכרטיסיות -->
+        <div id="recipeList"></div>
     </div>
 
     <!-- עמוד תכנון שבועי -->
@@ -90,7 +106,7 @@
     <div id="shopping" class="section">
         <h3>רשימת קניות אוטומטית</h3>
         <p class="hint">הרשימה מורכבת מהמצרכים של הארוחות ששובצו בטבלה השבועית.</p>
-        <button class="primary" onclick="loadDataFromCloud()">סנכרן נתונים מהענן</button>
+        <button class="secondary" onclick="loadDataFromCloud()" style="margin-bottom: 15px;">רענן נתונים מהענן</button>
         <ul id="shoppingList"></ul>
     </div>
 
@@ -112,13 +128,28 @@
 
     const loadingIndicator = document.getElementById('loading');
 
+    // פונקציה להוספת שורת מצרך בטופס
+    function addIngredientRow() {
+        const container = document.getElementById('ingredientsContainer');
+        const row = document.createElement('div');
+        row.className = 'ingredient-row';
+        row.innerHTML = `
+            <input type="text" placeholder="שם המצרך (למשל: עגבניות)" class="ing-name">
+            <input type="text" placeholder="כמות (למשל: 3 יחידות)" class="ing-amount">
+            <button type="button" class="remove-ing-btn" onclick="this.parentElement.remove()">X</button>
+        `;
+        container.appendChild(row);
+    }
+
     async function loadDataFromCloud() {
         loadingIndicator.style.display = 'block';
         try {
             const response = await fetch(API_URL);
             const data = await response.json();
+            
             recipes = data.recipes || [];
-            meals = data.meals || [];
+            // ניקוי ארוחות רפאים (ארוחות שהמתכון שלהן נמחק או שהן שבורות)
+            meals = (data.meals || []).filter(m => recipes.some(r => r.id == m.recipeId));
             
             renderRecipes();
             if(document.getElementById('planner').classList.contains('active')) renderPlanner();
@@ -152,26 +183,49 @@
 
     async function addRecipe() {
         const name = document.getElementById('recipeName').value.trim();
-        const ingString = document.getElementById('recipeIngredients').value.trim();
         const instructions = document.getElementById('recipeInstructions').value.trim();
         
         if(!name) return alert('נא להזין את שם המתכון');
         
-        // הפרדת המצרכים לפי שורות (Enter) במקום פסיקים
-        const ingredients = ingString.split('\n').map(i => i.trim()).filter(i => i !== "");
+        const rows = document.querySelectorAll('.ingredient-row');
+        let ingredients = [];
+        let isValid = true;
         
-        // הוספת המתכון החדש עם אופן ההכנה למערך
+        // מעבר על כל שורות המצרכים ובדיקת תקינות (חובה להזין כמות ומצרך)
+        rows.forEach(row => {
+            const ingName = row.querySelector('.ing-name').value.trim();
+            const ingAmount = row.querySelector('.ing-amount').value.trim();
+            
+            if(ingName || ingAmount) {
+                if(!ingName) {
+                    alert('מצאנו שורה עם כמות אך ללא שם המצרך. נא לתקן או למחוק את השורה.');
+                    isValid = false;
+                } else if(!ingAmount) {
+                    alert(`חובה להזין כמות עבור המצרך: "${ingName}".`);
+                    isValid = false;
+                } else {
+                    // שמירת המצרך כאובייקט של שם וכמות
+                    ingredients.push({ name: ingName, amount: ingAmount });
+                }
+            }
+        });
+        
+        if(!isValid) return; // עצירת השמירה אם יש שגיאת תקינות
+        if(ingredients.length === 0) return alert('נא להזין לפחות מצרך אחד.');
+        
         recipes.push({ id: Date.now(), name, ingredients, instructions });
         
         renderRecipes();
+        
+        // איפוס הטופס
         document.getElementById('recipeName').value = '';
-        document.getElementById('recipeIngredients').value = '';
         document.getElementById('recipeInstructions').value = '';
+        document.getElementById('ingredientsContainer').innerHTML = '';
+        addIngredientRow(); // הוספת שורה ריקה חדשה
         
         await saveDataToCloud();
     }
 
-    // ציור כרטיסיות ספר המתכונים
     function renderRecipes() {
         const container = document.getElementById('recipeList');
         container.innerHTML = '';
@@ -182,22 +236,29 @@
         }
 
         recipes.forEach(r => {
-            // הפיכת מערך המצרכים לרשימת HTML
-            let ingHtml = r.ingredients.map(ing => `<li>${ing}</li>`).join('');
+            let ingHtml = '';
+            // תמיכה לאחור בנתונים ישנים (אם המצרך היה טקסט רגיל) ותמיכה בפורמט החדש
+            if(r.ingredients) {
+                ingHtml = r.ingredients.map(ing => {
+                    if(typeof ing === 'object' && ing.name) {
+                        return `<li><strong>${ing.amount}</strong> - ${ing.name}</li>`;
+                    } else {
+                        return `<li>${ing}</li>`;
+                    }
+                }).join('');
+            }
+            
             let instructionsText = r.instructions ? r.instructions : 'לא הוזנו הוראות הכנה.';
 
             container.innerHTML += `
             <div class="recipe-card">
                 <h4>${r.name}</h4>
-                
                 <h5>מצרכים:</h5>
                 <ul class="ingredients-list">
                     ${ingHtml}
                 </ul>
-                
                 <h5>אופן ההכנה:</h5>
                 <p>${instructionsText}</p>
-                
                 <div class="actions">
                     <button onclick="deleteRecipe(${r.id})">מחק מתכון</button>
                 </div>
@@ -205,27 +266,18 @@
         });
     }
 
-    // ציור טבלת היומן השבועי
     function renderPlanner() {
         const container = document.getElementById('weeklyCalendar');
-        
         let tableHtml = `
         <div class="table-responsive">
             <table class="calendar-table">
                 <thead>
-                    <tr>
-                        <th>יום</th>
-                        <th>בוקר</th>
-                        <th>צהריים</th>
-                        <th>ערב</th>
-                    </tr>
+                    <tr><th>יום</th><th>בוקר</th><th>צהריים</th><th>ערב</th></tr>
                 </thead>
-                <tbody>
-        `;
+                <tbody>`;
         
         daysOfWeek.forEach(day => {
             tableHtml += `<tr><td>${day}</td>`;
-            
             mealTypes.forEach(mealType => {
                 const plannedMeal = meals.find(m => m.day === day && m.mealType === mealType.id);
                 const selectedRecipeId = plannedMeal ? plannedMeal.recipeId : '';
@@ -236,17 +288,10 @@
                     optionsHtml += `<option value="${r.id}" ${isSelected}>${r.name}</option>`;
                 });
                 
-                tableHtml += `
-                <td>
-                    <select onchange="updateMeal('${day}', '${mealType.id}', this.value)">
-                        ${optionsHtml}
-                    </select>
-                </td>`;
+                tableHtml += `<td><select onchange="updateMeal('${day}', '${mealType.id}', this.value)">${optionsHtml}</select></td>`;
             });
-            
             tableHtml += `</tr>`;
         });
-        
         tableHtml += `</tbody></table></div>`;
         container.innerHTML = tableHtml;
     }
@@ -265,29 +310,52 @@
     function generateShoppingList() {
         const list = document.getElementById('shoppingList');
         list.innerHTML = '';
-        let allIngredients = {};
+        let shoppingData = {};
         
         meals.forEach(meal => {
-            if(meal.ingredients) {
+            if(meal.ingredients && Array.isArray(meal.ingredients)) {
                 meal.ingredients.forEach(ing => {
-                    // הרשימה מאחדת בדיוק שורות זהות לחלוטין
-                    allIngredients[ing] = (allIngredients[ing] || 0) + 1;
+                    // טיפול בשמירת אובייקט מול טקסט (למניעת "object Object")
+                    let name = typeof ing === 'object' ? ing.name : String(ing);
+                    let amount = typeof ing === 'object' ? ing.amount : '';
+                    
+                    // סינון באגים ישנים 
+                    if (name === '[object Object]' || !name.trim()) return; 
+
+                    if (!shoppingData[name]) {
+                        shoppingData[name] = [];
+                    }
+                    if (amount) {
+                        shoppingData[name].push(amount);
+                    }
                 });
             }
         });
 
-        for (let item in allIngredients) {
-            let amountText = allIngredients[item] > 1 ? ` (x${allIngredients[item]})` : '';
-            list.innerHTML += `<li class="shopping-item">${item}${amountText} <span class="delete-btn" onclick="this.parentElement.remove()">סומן / הוסר</span></li>`;
-        }
-        
-        if(Object.keys(allIngredients).length === 0) {
+        const itemNames = Object.keys(shoppingData);
+        if(itemNames.length === 0) {
             list.innerHTML = '<p style="text-align:center; color:#7f8c8d;">אין מצרכים ברשימה כרגע.</p>';
+            return;
         }
+
+        itemNames.forEach(name => {
+            let amountsArray = shoppingData[name];
+            let amountText = '';
+            
+            if (amountsArray.length > 0) {
+                // אם יש כמה ארוחות עם אותו מצרך, יחבר אותם (למשל: 2 יחידות + 3 יחידות)
+                amountText = ` (${amountsArray.join(' + ')})`;
+            }
+            
+            list.innerHTML += `<li class="shopping-item">
+                <span>${name} <strong style="color:#27ae60;">${amountText}</strong></span>
+                <span class="delete-btn" onclick="this.parentElement.remove()">סומן / הוסר</span>
+            </li>`;
+        });
     }
 
     async function deleteRecipe(id) { 
-        if(!confirm('האם אתה בטוח שברצונך למחוק מתכון זה?')) return;
+        if(!confirm('האם אתה בטוח שברצונך למחוק מתכון זה? הארוחות הקשורות אליו יוסרו מהיומן.')) return;
         
         recipes = recipes.filter(r => r.id !== id);
         meals = meals.filter(m => m.recipeId != id);
@@ -297,7 +365,8 @@
         await saveDataToCloud();
     }
 
-    // הפעלה ראשונית
+    // הפעלה ראשונית של הדף
+    addIngredientRow(); // הוספת השורה הראשונה
     loadDataFromCloud();
 </script>
 </body>
