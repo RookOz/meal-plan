@@ -15,7 +15,7 @@
         .section.active { display: block; }
         
         /* עיצוב כללי לכפתורים ושדות */
-        input, textarea, button.primary, button.secondary { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-family: inherit; }
+        input[type="text"], input[type="file"], textarea, button.primary, button.secondary { width: 100%; padding: 12px; margin: 8px 0; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; font-family: inherit; }
         textarea { resize: vertical; line-height: 1.5; }
         button.primary { background-color: #27ae60; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; }
         button.primary:hover { background-color: #2ecc71; }
@@ -36,16 +36,34 @@
         .hint { font-size: 14px; color: #7f8c8d; margin-top: -15px; display: block; margin-bottom: 10px; }
         #loading { text-align: center; color: #2980b9; font-weight: bold; margin-bottom: 10px; display: none; }
         
-        /* כרטיסיות המתכונים */
-        .recipe-card { background: #fdfdfd; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .recipe-card h4 { margin: 0 0 10px 0; color: #2c3e50; font-size: 20px; border-bottom: 2px solid #34495e; padding-bottom: 5px; }
-        .recipe-card h5 { margin: 15px 0 5px 0; color: #27ae60; font-size: 16px; }
-        .recipe-card p { margin: 0; font-size: 15px; white-space: pre-wrap; line-height: 1.6; color: #444; }
-        .recipe-card ul.ingredients-list { margin: 0; padding-right: 20px; list-style-type: disc; }
-        .recipe-card ul.ingredients-list li { background: none; padding: 2px 0; margin: 0; border: none; color: #444; font-size: 15px; display: list-item; }
-        .recipe-card .actions { margin-top: 15px; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
-        .recipe-card .actions button { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
-        .recipe-card .actions button:hover { background: #c0392b; }
+        /* גריד ספר המתכונים וכרטיסיות מתקפלות */
+        #searchRecipe { border: 2px solid #3498db; border-radius: 20px; padding: 10px 15px; margin-bottom: 20px; }
+        #searchRecipe:focus { outline: none; border-color: #2980b9; box-shadow: 0 0 5px rgba(52,152,219,0.5); }
+        .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        
+        .recipe-card { background: #fdfdfd; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: box-shadow 0.2s; cursor: pointer; }
+        .recipe-card:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        
+        .recipe-img { width: 100%; height: 160px; object-fit: cover; display: block; border-bottom: 1px solid #eee; background-color: #ecf0f1; }
+        .recipe-header { padding: 15px; }
+        .recipe-header h4 { margin: 0; color: #2c3e50; font-size: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .recipe-header h4::after { content: '▼'; font-size: 14px; color: #7f8c8d; transition: transform 0.3s; }
+        
+        .recipe-card.expanded .recipe-header h4::after { transform: rotate(180deg); }
+        .recipe-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
+        .recipe-tag { background: #3498db; color: white; padding: 3px 10px; border-radius: 15px; font-size: 12px; }
+        
+        /* תוכן שמוסתר כברירת מחדל */
+        .recipe-details { display: none; padding: 0 15px 15px; border-top: 1px dashed #ccc; margin-top: 10px; padding-top: 15px; cursor: default; }
+        .recipe-card.expanded .recipe-details { display: block; }
+        
+        .recipe-details h5 { margin: 10px 0 5px 0; color: #27ae60; font-size: 16px; }
+        .recipe-details p { margin: 0; font-size: 15px; white-space: pre-wrap; line-height: 1.6; color: #444; }
+        .recipe-details ul.ingredients-list { margin: 0; padding-right: 20px; list-style-type: disc; }
+        .recipe-details ul.ingredients-list li { background: none; padding: 2px 0; margin: 0; border: none; color: #444; font-size: 15px; display: list-item; }
+        .actions { margin-top: 15px; text-align: left; border-top: 1px solid #eee; padding-top: 10px; }
+        .actions button { background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .actions button:hover { background: #c0392b; }
 
         /* טבלת היומן */
         .table-responsive { overflow-x: auto; margin-top: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
@@ -75,6 +93,10 @@
     <div id="recipes" class="section active">
         <h3>הוספת מתכון חדש</h3>
         <input type="text" id="recipeName" placeholder="שם המנה (למשל: פסטה ברוטב עגבניות)">
+        <input type="text" id="recipeTags" placeholder="תגיות (מופרדות בפסיק, למשל: טבעוני, מהיר, חלבי)">
+        
+        <label style="font-size: 14px; color: #2c3e50; font-weight: bold; margin-top: 10px; display: block;">העלאת תמונה (אופציונלי):</label>
+        <input type="file" id="recipeImage" accept="image/*">
         
         <div style="margin: 15px 0;">
             <label style="font-weight: bold; color: #2c3e50; margin-bottom: 10px; display: block;">מצרכים:</label>
@@ -92,7 +114,9 @@
         <hr style="border: 0; border-top: 1px solid #ddd; margin: 30px 0;">
         
         <h3>ספר המתכונים שלנו</h3>
-        <div id="recipeList"></div>
+        <input type="text" id="searchRecipe" placeholder="🔍 חפש לפי שם המנה או תגית..." oninput="filterRecipes()">
+        
+        <div id="recipeList" class="recipe-grid"></div>
     </div>
 
     <!-- עמוד תכנון שבועי -->
@@ -148,7 +172,6 @@
             const data = await response.json();
             
             recipes = data.recipes || [];
-            // ניקוי ארוחות רפאים (ארוחות שהמתכון שלהן נמחק או שהן שבורות)
             meals = (data.meals || []).filter(m => recipes.some(r => r.id == m.recipeId));
             
             renderRecipes();
@@ -181,9 +204,33 @@
         if(sectionId === 'shopping') generateShoppingList();
     }
 
+    // פונקציה להקטנת התמונה כדי לא לתקוע את הענן
+    function compressImage(file, callback) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = event => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600; // רוחב מקסימלי כדי לשמור על גודל נתונים סביר
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                callback(canvas.toDataURL('image/jpeg', 0.6)); // דחיסה ל-60% איכות
+            }
+        };
+    }
+
     async function addRecipe() {
         const name = document.getElementById('recipeName').value.trim();
         const instructions = document.getElementById('recipeInstructions').value.trim();
+        
+        // עיבוד התגיות
+        const tagsInput = document.getElementById('recipeTags').value;
+        const tags = tagsInput.split(',').map(t => t.trim()).filter(t => t !== "");
         
         if(!name) return alert('נא להזין את שם המתכון');
         
@@ -191,7 +238,6 @@
         let ingredients = [];
         let isValid = true;
         
-        // מעבר על כל שורות המצרכים ובדיקת תקינות (חובה להזין כמות ומצרך)
         rows.forEach(row => {
             const ingName = row.querySelector('.ing-name').value.trim();
             const ingAmount = row.querySelector('.ing-amount').value.trim();
@@ -204,26 +250,61 @@
                     alert(`חובה להזין כמות עבור המצרך: "${ingName}".`);
                     isValid = false;
                 } else {
-                    // שמירת המצרך כאובייקט של שם וכמות
                     ingredients.push({ name: ingName, amount: ingAmount });
                 }
             }
         });
         
-        if(!isValid) return; // עצירת השמירה אם יש שגיאת תקינות
+        if(!isValid) return; 
         if(ingredients.length === 0) return alert('נא להזין לפחות מצרך אחד.');
+
+        // טיפול בתמונה ושמירת המתכון
+        const imageFile = document.getElementById('recipeImage').files[0];
         
-        recipes.push({ id: Date.now(), name, ingredients, instructions });
+        const saveFinalRecipe = async (imageBase64) => {
+            recipes.push({ id: Date.now(), name, ingredients, instructions, tags, image: imageBase64 });
+            renderRecipes();
+            
+            // איפוס הטופס
+            document.getElementById('recipeName').value = '';
+            document.getElementById('recipeTags').value = '';
+            document.getElementById('recipeInstructions').value = '';
+            document.getElementById('recipeImage').value = '';
+            document.getElementById('ingredientsContainer').innerHTML = '';
+            addIngredientRow(); 
+            
+            await saveDataToCloud();
+        };
+
+        if(imageFile) {
+            compressImage(imageFile, saveFinalRecipe);
+        } else {
+            saveFinalRecipe(null);
+        }
+    }
+
+    // פונקציית פתיחה/סגירה של כרטיסייה
+    function toggleRecipe(id, event) {
+        // מונע סגירת הכרטיסייה אם לחצו בטעות על כפתור המחיקה או בתוך הטקסט
+        if(event.target.tagName === 'BUTTON') return;
         
-        renderRecipes();
+        const card = document.getElementById(`recipe-card-${id}`);
+        card.classList.toggle('expanded');
+    }
+
+    // סינון מתכונים לפי חיפוש
+    function filterRecipes() {
+        const query = document.getElementById('searchRecipe').value.toLowerCase();
+        const cards = document.querySelectorAll('.recipe-card');
         
-        // איפוס הטופס
-        document.getElementById('recipeName').value = '';
-        document.getElementById('recipeInstructions').value = '';
-        document.getElementById('ingredientsContainer').innerHTML = '';
-        addIngredientRow(); // הוספת שורה ריקה חדשה
-        
-        await saveDataToCloud();
+        cards.forEach(card => {
+            const searchData = card.getAttribute('data-search').toLowerCase();
+            if(searchData.includes(query)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
     }
 
     function renderRecipes() {
@@ -231,13 +312,15 @@
         container.innerHTML = '';
         
         if(recipes.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#7f8c8d;">ספר המתכונים ריק. הוסף את המתכון הראשון שלך!</p>';
+            container.innerHTML = '<p style="grid-column: 1 / -1; text-align:center; color:#7f8c8d;">ספר המתכונים ריק. הוסף את המתכון הראשון שלך!</p>';
             return;
         }
 
-        recipes.forEach(r => {
+        // מיון המתכונים מהחדש לישן
+        const reversedRecipes = [...recipes].reverse();
+
+        reversedRecipes.forEach(r => {
             let ingHtml = '';
-            // תמיכה לאחור בנתונים ישנים (אם המצרך היה טקסט רגיל) ותמיכה בפורמט החדש
             if(r.ingredients) {
                 ingHtml = r.ingredients.map(ing => {
                     if(typeof ing === 'object' && ing.name) {
@@ -249,21 +332,41 @@
             }
             
             let instructionsText = r.instructions ? r.instructions : 'לא הוזנו הוראות הכנה.';
+            
+            // יצירת תגיות
+            const tags = r.tags || [];
+            const tagsHtml = tags.map(t => `<span class="recipe-tag">${t}</span>`).join('');
+            
+            // תמונה
+            const imgHtml = r.image ? `<img src="${r.image}" class="recipe-img" alt="${r.name}">` : '';
+
+            // מחרוזת מוסתרת שמשמשת לחיפוש (מכילה את השם והתגיות)
+            const searchString = `${r.name} ${tags.join(' ')}`;
 
             container.innerHTML += `
-            <div class="recipe-card">
-                <h4>${r.name}</h4>
-                <h5>מצרכים:</h5>
-                <ul class="ingredients-list">
-                    ${ingHtml}
-                </ul>
-                <h5>אופן ההכנה:</h5>
-                <p>${instructionsText}</p>
-                <div class="actions">
-                    <button onclick="deleteRecipe(${r.id})">מחק מתכון</button>
+            <div class="recipe-card" id="recipe-card-${r.id}" data-search="${searchString}">
+                ${imgHtml}
+                <div class="recipe-header" onclick="toggleRecipe(${r.id}, event)">
+                    <h4>${r.name}</h4>
+                    <div class="recipe-tags">${tagsHtml}</div>
+                </div>
+                
+                <div class="recipe-details" onclick="event.stopPropagation()">
+                    <h5>מצרכים:</h5>
+                    <ul class="ingredients-list">
+                        ${ingHtml}
+                    </ul>
+                    <h5>אופן ההכנה:</h5>
+                    <p>${instructionsText}</p>
+                    <div class="actions">
+                        <button onclick="deleteRecipe(${r.id})">מחק מתכון</button>
+                    </div>
                 </div>
             </div>`;
         });
+        
+        // החלת החיפוש הקיים מיד לאחר הרינדור (אם המשתמש באמצע חיפוש ומתכון נמחק למשל)
+        filterRecipes();
     }
 
     function renderPlanner() {
@@ -315,11 +418,9 @@
         meals.forEach(meal => {
             if(meal.ingredients && Array.isArray(meal.ingredients)) {
                 meal.ingredients.forEach(ing => {
-                    // טיפול בשמירת אובייקט מול טקסט (למניעת "object Object")
                     let name = typeof ing === 'object' ? ing.name : String(ing);
                     let amount = typeof ing === 'object' ? ing.amount : '';
                     
-                    // סינון באגים ישנים 
                     if (name === '[object Object]' || !name.trim()) return; 
 
                     if (!shoppingData[name]) {
@@ -343,7 +444,6 @@
             let amountText = '';
             
             if (amountsArray.length > 0) {
-                // אם יש כמה ארוחות עם אותו מצרך, יחבר אותם (למשל: 2 יחידות + 3 יחידות)
                 amountText = ` (${amountsArray.join(' + ')})`;
             }
             
@@ -365,8 +465,7 @@
         await saveDataToCloud();
     }
 
-    // הפעלה ראשונית של הדף
-    addIngredientRow(); // הוספת השורה הראשונה
+    addIngredientRow(); 
     loadDataFromCloud();
 </script>
 </body>
